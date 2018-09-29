@@ -1,13 +1,7 @@
-      * vim:expandtab:filetype=cobol:tabstop=2:textwidth=72:
-
        IDENTIFICATION DIVISION.
-
        PROGRAM-ID. game_of_life.
-
        DATA DIVISION.
-
        WORKING-STORAGE SECTION.
-
        01 cell_color    PIC 9.
        01 cell_random   PIC 9.
 
@@ -41,6 +35,8 @@
          02 w_y         OCCURS 50 TIMES.
            03 w_x       OCCURS 50 TIMES.
              04 cell    PIC 9.
+              88 dead   value 0.
+              88 alive  value 1,2,3.
 
        01 world_copy.
          02 w_y         OCCURS 50 TIMES.
@@ -48,11 +44,7 @@
              04 cell    PIC 9.
 
        PROCEDURE DIVISION.
-
       * -------------------------------------------------------------- *
-
-       main SECTION.
-
        DISPLAY
          "Enter a map as lines of 0's and 1's via STDIN, or press "
          "enter to create a random map. Maps are limited to "
@@ -91,29 +83,24 @@
 
        create_world_from_stdin SECTION.
 
-       MOVE 1 TO counter
-
-       PERFORM WITH TEST AFTER UNTIL text_line = SPACES
+       PERFORM WITH TEST AFTER VARYING counter from 1 by 1
+       UNTIL text_line = SPACES
 
          ACCEPT text_line FROM STDIN
          MOVE text_line TO w_y IN world_real(counter)
 
-         ADD 1 TO counter
-
        END-PERFORM
 
-       IF w_y IN world_real(1) <> SPACES THEN
+       IF w_y IN world_real(1) NOT = SPACES THEN
 
-         MOVE counter TO height
-         SUBTRACT 2 FROM height
+         SUBTRACT 2 FROM counter GIVING height
 
-         MOVE 0 TO counter
+         MOVE ZERO TO counter
 
          INSPECT w_y IN world_real(1) TALLYING counter FOR
            TRAILING SPACES
 
-         MOVE width_max TO width
-         SUBTRACT counter FROM width
+         SUBTRACT width_max FROM counter giving width
 
          IF height > height_max THEN
            MOVE height_max TO height
@@ -132,8 +119,7 @@
 
        MOVE FUNCTION CURRENT-DATE(15:1) TO random_color
 
-       MOVE FUNCTION MOD(random_color, 7) TO random_color
-       ADD 1 TO random_color
+       COMPUTE random_color = FUNCTION MOD(random_color, 7) + 1
 
        PERFORM FOREVER
 
@@ -152,32 +138,25 @@
        PERFORM VARYING y FROM 1 UNTIL y > height
          PERFORM VARYING x FROM 1 UNTIL x > width
 
-           MULTIPLY x BY 2 GIVING x_2
-           SUBTRACT 1 FROM x_2
-
-           IF cell IN world_real(y, x) = 0 THEN
-             MOVE 0 TO cell_color
-           ELSE
-             MOVE random_color TO cell_color
-           END-IF
+           COMPUTE x_2 = 2 * x - 1
 
            EVALUATE cell IN world_real(y, x)
              WHEN 0
                DISPLAY "  " AT COLUMN x_2, LINE y WITH
-                 FOREGROUND-COLOR cell_color,
-                 BACKGROUND-COLOR cell_color, REVERSE
+                 FOREGROUND-COLOR 0,
+                 BACKGROUND-COLOR 0, REVERSE
              WHEN 1
                DISPLAY "  " AT COLUMN x_2, LINE y WITH
-                 FOREGROUND-COLOR cell_color,
-                 BACKGROUND-COLOR cell_color, REVERSE, HIGHLIGHT
+                 FOREGROUND-COLOR random_color,
+                 BACKGROUND-COLOR random_color, REVERSE, HIGHLIGHT
              WHEN 2
                DISPLAY "  " AT COLUMN x_2, LINE y WITH
-                 FOREGROUND-COLOR cell_color,
-                 BACKGROUND-COLOR cell_color, REVERSE
+                 FOREGROUND-COLOR random_color,
+                 BACKGROUND-COLOR random_color, REVERSE
              WHEN 3
                DISPLAY "  " AT COLUMN x_2, LINE y WITH
-                 FOREGROUND-COLOR cell_color,
-                 BACKGROUND-COLOR cell_color, REVERSE, LOWLIGHT
+                 FOREGROUND-COLOR random_color,
+                 BACKGROUND-COLOR random_color, REVERSE, LOWLIGHT
            END-EVALUATE
 
          END-PERFORM
@@ -193,7 +172,7 @@
 
            PERFORM count_neighbours
 
-           IF cell IN world_real(y, x) = 0 THEN
+           IF dead (y, x) THEN
              IF neighbours = 3 THEN
                SET cell IN world_copy(y, x) TO 1
              END-IF
@@ -204,9 +183,8 @@
              IF neighbours = 2 OR neighbours = 3 THEN
                EVALUATE cell IN world_real(y, x)
                  WHEN 1
-                   SET cell IN world_copy(y, x) TO 2
                  WHEN 2
-                   SET cell IN world_copy(y, x) TO 3
+                   ADD 1 TO cell IN world_copy(y, x)
                END-EVALUATE
              END-IF
              IF neighbours > 3 THEN
@@ -226,11 +204,8 @@
 
        INITIALIZE neighbours
 
-       MOVE x TO i
-       MOVE y TO j
-
-       SUBTRACT 1 FROM i
-       SUBTRACT 1 FROM j
+       SUBTRACT 1 FROM x GIVING i
+       SUBTRACT 1 FROM y GIVING j
 
        PERFORM 3 TIMES
          PERFORM 3 TIMES
@@ -241,7 +216,7 @@
            PERFORM translate_coordinates
 
            IF i <> x OR j <> y THEN
-             IF cell IN world_real(l, k) > 0 THEN
+             IF alive (l, k) THEN
                ADD 1 TO neighbours
              END-IF
            END-IF
@@ -252,8 +227,7 @@
 
          ADD 1 TO i
 
-         MOVE y TO j
-         SUBTRACT 1 FROM j
+         SUBTRACT 1 FROM y GIVING j
 
        END-PERFORM
        .
@@ -263,13 +237,17 @@
        translate_coordinates SECTION.
 
        EVALUATE k
-         WHEN 0 MOVE height TO k
-         WHEN (height + 1) MOVE 1 TO k
+         WHEN 0
+           MOVE height TO k
+         WHEN (height + 1)
+           MOVE 1 TO k
        END-EVALUATE
 
        EVALUATE l
-         WHEN 0 MOVE width TO l
-         WHEN (width + 1) MOVE 1 TO l
+         WHEN 0
+           MOVE width TO l
+         WHEN (width + 1)
+           MOVE 1 TO l
        END-EVALUATE
        .
 
