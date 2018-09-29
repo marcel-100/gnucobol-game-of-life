@@ -26,7 +26,7 @@
        01 x             PIC 99.
        01 y             PIC 99.
 
-       01 x_2           PIC 99.
+       01 x_2           PIC 999.
 
        01 start_x       PIC 99.
        01 start_y       PIC 99.
