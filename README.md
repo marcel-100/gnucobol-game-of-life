@@ -4,7 +4,7 @@ This implementation was created as part of the GnuCOBOL course by Fiducia & GAD 
 
 Compile and run with
 
-    cobc -x gol.cbl && cat maps/thunderbird.txt | ./gol
+   cobc -x gol.cbl && ./gol < maps/thunderbird.txt
 
 Exit with
 
